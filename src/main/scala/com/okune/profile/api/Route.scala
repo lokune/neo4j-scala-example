@@ -10,7 +10,7 @@ import com.okune.profile.model.RequestEntity
 import scala.concurrent.ExecutionContext
 
 class HomeRoute {
-  val routes: Route = logRequestResult("profile-service/") {
+  val routes: Route = logRequestResult("demo-service/") {
     path("") {
       get {
         complete {
@@ -23,7 +23,7 @@ class HomeRoute {
 }
 
 class PingRoute {
-  val routes: Route = logRequestResult("profile-service/") {
+  val routes: Route = logRequestResult("demo-service/") {
     path("ping") {
       get {
         complete {
@@ -35,7 +35,7 @@ class PingRoute {
 }
 
 class ApiDocRoute {
-  val routes: Route = logRequestResult("profile-service/") {
+  val routes: Route = logRequestResult("demo-service/") {
     path("apidoc") {
       getFromResource("apidoc.raml", ContentTypes.`text/plain(UTF-8)`)
     }
@@ -46,7 +46,7 @@ class ProfileRoute()(implicit ec: ExecutionContext) {
 
   val personsCtrl: PersonsController = new PersonsController()
 
-  val routes: Route = logRequestResult("profile-service/profiles") {
+  val routes: Route = logRequestResult("demo-service/profiles") {
     pathPrefix("profiles") {
       path("persons") {
         (post & entity(as[RequestEntity.Person])) { person =>
