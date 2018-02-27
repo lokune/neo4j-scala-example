@@ -1,0 +1,233 @@
+#%RAML 1.0
+title: Demo Service API
+version: 1.0.0
+baseUri: http://localhost:9001
+protocols: [HTTP, HTTPS]
+mediaType:  application/json
+
+types:
+  Person:
+    type: object
+    properties:
+      uuid:
+        required: false
+        type: integer
+      full_name:
+        required: true
+        type: string
+      email:
+        required: false
+        type: string
+      given_name:
+        required: false
+        type: string
+      family_name:
+        required: false
+        type: string
+      preferred_name:
+        required: false
+        type: string
+      alias:
+        required: false
+        type: string
+      title:
+        required: false
+        type: string
+      suffix:
+        required: false
+        type: string
+      marital_status:
+        required: false
+        type: string
+      gender:
+        required: false
+        type: string
+      phone:
+        required: false
+        type: string
+      address:
+        required: false
+        type: string
+      zip_code:
+        required: false
+        type: string
+      country:
+        required: false
+        type: string
+      dob:
+        required: false
+        type: string
+      tin:
+        required: false
+        type: string
+      created_at:
+        required: false
+        type: datetime
+      created_by:
+        required: false
+        type: integer
+      modified_at:
+        required: false
+        type: datetime
+      modified_by:
+        required: false
+        type: integer
+
+resourceTypes:
+  collection:
+    usage: Use this resourceType to represent a collection of items
+    description: A collection of <<resourcePathName|!pluralize>>
+    get:
+      description: Get all <<resourcePathName|!pluralize>>
+      responses:
+        200:
+          body:
+            type: <<item>>[]
+    post:
+      description: create a new <<resourcePathName|!singularize>>
+      body:
+        type: <<item>>
+      responses:
+        201:
+          body:
+            type: <<item>>
+        400:
+
+  instance:
+    usage: Use this resourceType to represent any single item
+    description: A single <<resourcePathName|!singularize>>
+    uriParameters:
+     uiid:
+      type: string
+      description: The uuid of the <<resourcePathName|!singularize>>
+    get:
+      description: Get a single <<resourcePathName|!singularize>>
+      responses:
+       200:
+        body:
+          type: <<item>>
+       404:
+    put:
+      description: Update a <<resourcePathName|!singularize>>
+      body:
+        type: <<item>>
+      responses:
+       200:
+        body:
+         type: <<item>>
+       400:
+       404:
+    delete:
+      description: Delete a <<resourcePathName|!singularize>>
+      responses:
+        200:
+          description: |
+            Succesfully deleted resource
+          body:
+            type: <<item>>
+        404:
+
+/profiles:
+  /persons:
+  type: { collection: {item: Person} }
+  get:
+    responses:
+      200:
+        body:
+          example: |
+            [{
+              "uuid": "2dca611e-d1e8-4db3-8a61-1ed1e8cdb39f",
+              "full_name": "Laban Okune Anunda",
+              "dob": "2/10/1997",
+              "preferred_name": "Laban",
+              "suffix": "Mz.",
+              "family_name": "Okune",
+              "tin": "232819525333",
+              "alias": "lbo",
+              "title": "Mzee",
+              "given_name": "Anunda"
+             }]
+  post:
+    body:
+      example: |
+        {
+          "full_name": "Laban Okune Anunda",
+          "email": "laban.okune@gmail.com",
+          "given_name": "Anunda",
+          "family_name": "Okune",
+          "preferred_name": "Laban",
+          "alias": "lbo",
+          "title": "Mzee",
+          "suffix": "Mz.",
+          "dob": "2/10/1997",
+          "tin":"232819525333"
+        }
+    responses:
+      201:
+        body:
+          example: |
+            {
+              "uuid": "2dca611e-d1e8-4db3-8a61-1ed1e8cdb39f",
+              "full_name": "Laban Okune Anunda",
+              "dob": "2/10/1997",
+              "preferred_name": "Laban",
+              "suffix": "Mz.",
+              "family_name": "Okune",
+              "tin": "232819525333",
+              "alias": "lbo",
+              "title": "Mzee",
+              "given_name": "Anunda"
+            }
+  /{uuid}:
+    type: { instance: {item: Person} }
+    get:
+      responses:
+        200:
+          body:
+            example: |
+              {
+                "uuid": "2dca611e-d1e8-4db3-8a61-1ed1e8cdb39f",
+                "full_name": "Laban Okune Anunda",
+                "dob": "2/10/1997",
+                "preferred_name": "Laban",
+                "suffix": "Mz.",
+                "family_name": "Okune",
+                "tin": "232819525333",
+                "alias": "lbo",
+                "title": "Mzee",
+                "given_name": "Anunda"
+              }
+    put:
+      body:
+        example: |
+          {
+            "full_name": "Laban Okune Anunda",
+            "given_name": "Anunda",
+            "family_name": "Okune",
+            "preferred_name": "Laban",
+            "alias": "lbo",
+            "title": "Engineer",
+            "suffix": "Mr."
+          }
+      responses:
+        200:
+          body:
+            example: |
+              {
+                "uuid": "2dca611e-d1e8-4db3-8a61-1ed1e8cdb39f",
+                "full_name": "Laban Okune Anunda",
+                "dob": "2/10/1997",
+                "preferred_name": "Laban",
+                "suffix": "Mr.",
+                "family_name": "Okune",
+                "tin": "232819525333",
+                "alias": "lbo",
+                "title": "Engineer",
+                "given_name": "Anunda"
+              }
+    delete:
+      responses:
+        200:
+          description: Successfully deleted resource
+          body:
+            example: "1 profile deleted"
