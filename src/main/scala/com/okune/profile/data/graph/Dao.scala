@@ -1,6 +1,6 @@
 package com.okune.profile.data.graph
 
-import com.okune.profile.data.graph.Dao.{Cypher, Gremlin}
+import com.okune.profile.data.graph.Dao.Gremlin
 import com.okune.profile.model.Exceptions.ValidationException
 import com.okune.profile.model.{DatabaseEntity, RequestEntity, ResponseEntity}
 import com.okune.profile.util.{AppConfig, Graph}
@@ -8,20 +8,9 @@ import com.steelbridgelabs.oss.neo4j.structure.{Neo4JGraphConfigurationBuilder, 
 import gremlin.scala.{ScalaGraph, _}
 import henkan.optional.all._
 import org.apache.commons.configuration.Configuration
-import org.neo4j.driver.v1.{AuthTokens, Driver, GraphDatabase}
 
 sealed trait Dao {
-
-  import Cypher._
   import Gremlin._
-
-  /** A convenient function for safely closing a resource after use */
-  private def using[A <: {def close() : Unit}, B](resource: A)(f: A => B): B =
-    try {
-      f(resource)
-    } finally {
-      if (resource != null) resource.close()
-    }
 
   /**
     * Find a vertex based on a unique property
@@ -46,34 +35,21 @@ sealed trait Dao {
     * Remove a vertex
     *
     * @param uuid  the UUID of the vertex to be deleted
-    * @param label the Label of the vertex to be deleted
     * @return the number of vertices deleted
     */
-  protected def remove(uuid: String, label: String): Option[Int] = {
+  protected def _remove(uuid: String): Option[Int] = {
     val matchingVs = graph.V(uuid).toList
     val count = matchingVs.size
 
-    // matchingVs.foreach { v => v.remove() } // This method sometimes deletes a vertex in db, sometimes it doesn't
-    // graph.tx().commit() // Replacing with Cypher for actual db deletion
-    val query = "MATCH (n:" + label + " {uuid: \"" + sanitize(uuid) + "\"}) DETACH DELETE n;"
-    using(driver.session()) { ses =>
-      ses.run(query)
-      if (count > 0) Some(count) else None
-    }
+    matchingVs.foreach { v => v.remove() }
+    graph.tx().commit()
+    if(count > 0) Some(count) else None
   }
 
   private def sanitize(s: String): String = s.replaceAll("\"", "")
 }
 
 object Dao {
-
-  object Cypher {
-    /** If you need to run Cypher queries directly, get the driver here.
-      * Note that this will open a separate connection to the db
-      */
-    lazy val driver: Driver = GraphDatabase.driver(s"bolt://${AppConfig.neo4j.getString("host")}",
-      AuthTokens.basic(AppConfig.neo4j.getString("user"), AppConfig.neo4j.getString("password")))
-  }
 
   object Gremlin {
     /**
@@ -132,9 +108,6 @@ object Dao {
         //Create edge: personVertex --> emailVertex
         newPersonVertex --- Graph.Relationship.PERSONAL_EMAIL.toString --> emailVertex
       }
-
-      //TODO: Logic to create more vertices and relationships based on the info in the request entity e.g Address
-
       graph.tx.commit()
 
       /* Construct the response entity */
@@ -165,17 +138,9 @@ object Dao {
       * @return the number of vertices deleted
       */
     def remove(uuid: String): Option[Int] = {
-      // Find and remove all connected email vertices: ---WORK_EMAIL-->Email, ---PERSONAL_EMAIL-->Email
-      // graph.V(uuid).outE - Following outgoing edges returns empty! Damn it!
-      val emailEdges: List[Edge] = graph.E.hasLabel(Graph.Relationship.PERSONAL_EMAIL.toString,
-        Graph.Relationship.WORK_EMAIL.toString).toList
-
-      emailEdges.foreach { e =>
-        val emailEntity: DatabaseEntity.Email = e.inVertex.toCC[DatabaseEntity.Email]
-        emailEntity.uuid.foreach(uuid => remove(uuid, Graph.Label.Email.toString))
-      }
-
-      remove(uuid, Graph.Label.Person.toString)
+      // graph.V(uuid).outE - Following outgoing edges returns empty!
+      graph.V(uuid).outE.toList.foreach(_.remove()) // Remove outgoing edges
+      _remove(uuid)
     }
   }
 
